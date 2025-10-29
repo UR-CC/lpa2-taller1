@@ -3,8 +3,15 @@ Clase Comedor que implementa composición.
 Un comedor está compuesto por una mesa y varias sillas.
 """
 
+from __future__ import annotations
+
 # Importar List para anotaciones de tipo
-from typing import List
+from typing import TYPE_CHECKING, List
+
+if TYPE_CHECKING:
+    from src.models.concretos.mesa import Mesa
+    from src.models.concretos.silla import Silla
+
 # from ..concretos.mesa import Mesa
 # from ..concretos.silla import Silla
 
@@ -89,17 +96,14 @@ class Comedor:
             return "Índice de silla inválido"
 
     def calcular_precio_total(self) -> float:
-        """
-        Calcula el precio total del comedor sumando todos sus componentes.
+        """Calcula el precio total del comedor sumando mesa y sillas.
 
         Returns:
-            float: Precio total del set de comedor
+            float: Precio total del comedor
         """
         precio_total = self._mesa.calcular_precio()
         for silla in self._sillas:
             precio_total += silla.calcular_precio()
-        if len(self._sillas) >= 4:
-            precio_total *= 0.95  # 5% de descuento
         return round(precio_total, 2)
 
     def obtener_descripcion_completa(self) -> str:

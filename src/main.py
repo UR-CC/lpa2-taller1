@@ -5,18 +5,17 @@ Este archivo inicializa la aplicación y proporciona datos de ejemplo.
 """
 
 from services.tienda import TiendaMuebles
+from src.models.composicion.comedor import Comedor
+from src.models.concretos.armario import Armario
+from src.models.concretos.cajonera import Cajonera
+from src.models.concretos.cama import Cama
+from src.models.concretos.escritorio import Escritorio
+from src.models.concretos.mesa import Mesa
+from src.models.concretos.silla import Silla
+from src.models.concretos.sillon import Sillon
+from src.models.concretos.sofa import Sofa
+from src.models.concretos.sofacama import SofaCama
 from ui.menu import MenuTienda
-
-from models.concretos.silla import Silla
-from models.concretos.sillon import Sillon
-from models.concretos.sofa import Sofa
-from models.concretos.mesa import Mesa
-from models.concretos.armario import Armario
-from models.concretos.cama import Cama
-from models.concretos.escritorio import Escritorio
-from models.concretos.cajonera import Cajonera
-from models.concretos.sofacama import SofaCama
-from models.composicion.comedor import Comedor
 
 
 def crear_catalogo_inicial(tienda: "TiendaMuebles") -> None:
@@ -211,7 +210,7 @@ def crear_catalogo_inicial(tienda: "TiendaMuebles") -> None:
         resultado = tienda.agregar_mueble(mueble)
         print(f"  ✓ {resultado}")
 
-    print(f"✅ Catálogo inicial creado con éxito!")
+    print("✅ Catálogo inicial creado con éxito!")
 
 
 def crear_comedores_ejemplo(tienda: "TiendaMuebles") -> None:

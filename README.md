@@ -1,6 +1,6 @@
 # LPA2 Taller1: Pruebas Unitarias Tienda de Muebles
 
-![commits](https://badgen.net/github/commits/UR-CC/lpa2-taller1?icon=github) 
+![commits](https://badgen.net/github/commits/UR-CC/lpa2-taller1?icon=github)
 ![last_commit](https://img.shields.io/github/last-commit/UR-CC/lpa2-taller1)
 
 ## Objetivos
@@ -110,7 +110,7 @@ Archivo `.coveragerc`:
 ```ini
 [run]
 source = src
-omit = 
+omit =
     */__pycache__/*
     */tests/*
     */venv/*
@@ -128,6 +128,142 @@ exclude_lines =
 fail_under = 80
 ```
 
+### Nota sobre exclusiones de cobertura
+
+En este proyecto hemos decidido excluir el código de la interfaz de usuario (UI) y el punto de entrada `src/main.py` de la medición de cobertura, ya que contienen lógica interactiva difícil de testear automáticamente. La exclusión se configura en el archivo `.coveragerc` y permite centrar la medición en la lógica de negocio (modelos y servicios).
+
+Si prefieres incluir la UI en la cobertura, elimina `src/ui/*` y `src/main.py` de la sección `omit` en `.coveragerc` y añade pruebas que mockeen las entradas interactivas.
+
+## Cómo ejecutar las pruebas y generar el reporte de cobertura
+
+Comandos recomendados (Linux/Mac/WSL):
+
+```bash
+# crear/activar virtualenv e instalar dependencias
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Ejecutar toda la suite de tests con reporte de cobertura en la terminal y generar html en htmlcov/
+PYTHONPATH=$(pwd) pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=term-missing --cov-report=html
+
+# Abrir el reporte HTML (Linux)
+xdg-open htmlcov/index.html
+```
+
+El reporte HTML se genera en el directorio `htmlcov/` y muestra el detalle por archivo con líneas no cubiertas.
+
+### Guía rápida
+
+A continuación tienes los comandos más comunes organizados por sistema y por objetivo (rápidos y copy/paste):
+
+- Ejecutar toda la suite (Linux / macOS / WSL):
+
+```bash
+# desde la raíz del proyecto
+PYTHONPATH=$(pwd) pytest --maxfail=1 --disable-warnings -q
+```
+
+- Ejecutar toda la suite con cobertura y generar HTML (Linux / macOS / WSL):
+
+```bash
+PYTHONPATH=$(pwd) pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=term-missing --cov-report=html
+```
+
+- Ejecutar un único archivo de tests:
+
+```bash
+PYTHONPATH=$(pwd) pytest tests/unit/models/test_mueble_base_additional.py -q
+```
+
+- Ejecutar pruebas de un módulo (p. ej. `models`):
+
+```bash
+PYTHONPATH=$(pwd) pytest tests/unit/models -q
+```
+
+- Buscar/ejecutar tests por palabra clave (-k):
+
+```bash
+PYTHONPATH=$(pwd) pytest -k "sofacama and conversion" -q
+```
+
+- Ejecutar con marcador (p. ej. saltar pruebas lentas):
+
+```bash
+PYTHONPATH=$(pwd) pytest -m "not slow" -q
+```
+
+- Abrir el reporte HTML (Windows / macOS / Linux):
+
+```bash
+# Linux
+xdg-open htmlcov/index.html || true
+# macOS
+open htmlcov/index.html || true
+# Windows (PowerShell)
+start htmlcov\\index.html
+```
+
+### Comandos para Windows (PowerShell)
+
+```powershell
+# activar virtualenv
+venv\Scripts\Activate.ps1
+# ejecutar tests con cobertura
+$env:PYTHONPATH=(Get-Location).Path; pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=term-missing --cov-report=html
+```
+
+### Dónde está el reporte
+
+El HTML se escribe en `htmlcov/index.html`. El reporte terminal (`--cov-report=term-missing`) también muestra qué líneas faltan probar por archivo.
+
+### Fixtures y mocks (práctico)
+
+Hemos centralizado fixtures reutilizables en `tests/conftest.py`. Ejemplos disponibles:
+
+- Fixture `tienda()` crea una instancia de `TiendaMuebles` para usar en múltiples tests.
+- Fixture `silla_basica()` y `mesa_basica()` crean muebles de ejemplo.
+
+Uso típico en un test:
+
+```python
+def test_algo(tienda, silla_basica):
+    tienda.agregar_producto(silla_basica)
+    assert silla_basica in tienda.inventario
+```
+
+Para mocks, usamos `unittest.mock` cuando queremos simular comportamientos (por ejemplo un `mueble` cuyo `calcular_precio()` lanza excepción):
+
+```python
+from unittest.mock import Mock
+
+bad = Mock()
+bad.calcular_precio.side_effect = Exception('boom')
+tienda.agregar_producto(bad)
+```
+
+Hay ejemplos concretos en `tests/unit/services/`.
+
+### Casos edge y condiciones de error (cómo probarlos)
+
+- Muebles con precio inválido (0 o negativo) → crear mocks que retornen 0 o que lancen excepción y comprobar que la tienda responde con mensajes de error.
+- Intentos de venta de productos inexistentes → llamar `realizar_venta` con un objeto no presente en inventario y verificar el diccionario de error.
+- Límite de sillas en `Comedor` → usar `Comedor.agregar_silla` hasta que devuelva un mensaje de capacidad máxima.
+
+Revisa los tests añadidos en `tests/unit/models` y `tests/unit/services` para ejemplos concretos.
+
+### Problemas comunes y soluciones rápidas
+
+- Error de imports al ejecutar pytest (p. ej. ModuleNotFoundError): asegúrate de ejecutar con `PYTHONPATH=$(pwd)` o activa el virtualenv desde la raíz del repo.
+- Conflictos por archivos compilados: si ves errores de import collisions borra `__pycache__` y `*.pyc` antes de volver a ejecutar.
+- Commit de cambios: si quieres que aplique commits automáticos dímelo; por defecto no cambio la configuración global de git del sistema.
+
+
+### Nota sobre el umbral de cobertura
+
+El proyecto exige una cobertura mínima del 80%. Esta comprobación está configurada en `.coveragerc` (clave `fail_under`) y las ejecuciones de `pytest` fallarán si la cobertura cae por debajo de ese porcentaje.
+
 ## Diseño de Pruebas Unitarias
 
 ### Filosofía de las Pruebas
@@ -138,10 +274,10 @@ fail_under = 80
 def test_nombre_del_test():
     # Arrange: Preparar el escenario
     objeto = Clase(parametro=valor)
-    
+
     # Act: Ejecutar la acción a probar
     resultado = objeto.metodo()
-    
+
     # Assert: Verificar el resultado
     assert resultado == valor_esperado
 ```
@@ -167,12 +303,12 @@ class TestMueble:
         # Verificar que Mueble es abstracta
         with pytest.raises(TypeError):
             mueble = Mueble("Mesa", "Madera", 100.0)
-    
+
     def test_tiene_metodos_abstractos(self):
         # Verificar que tiene métodos abstractos
         assert hasattr(Mueble, 'calcular_precio')
         assert hasattr(Mueble, 'obtener_descripcion')
-        
+
         # Verificar que son abstractos
         assert Mueble.calcular_precio.__isabstractmethod__
         assert Mueble.obtener_descripcion.__isabstractmethod__
@@ -190,22 +326,22 @@ class TestSilla:
     @pytest.fixture
     def silla_basica(self):
         return Silla("Silla Básica", "Madera", 50.0, 4, "Madera")
-    
+
     def test_instanciacion_correcta(self, silla_basica):
         # Verificar herencia de atributos
         assert silla_basica.nombre == "Silla Básica"
         assert silla_basica.material == "Madera"
         assert silla_basica.precio_base == 50.0
-        
+
         # Verificar atributos específicos
         assert silla_basica.numero_patas == 4
         assert silla_basica.tipo_madera == "Madera"
-    
+
     def test_calcular_precio(self, silla_basica):
         # Probar polimorfismo
         precio = silla_basica.calcular_precio()
         assert precio == 50.0  # Precio base sin modificaciones
-    
+
     def test_obtener_descripcion(self, silla_basica):
         descripcion = silla_basica.obtener_descripcion()
         assert "Silla Básica" in descripcion
@@ -223,19 +359,19 @@ from src.models.concretos.sofacama import SofaCama
 class TestSofaCama:
     def test_herencia_multiple(self):
         sofa_cama = SofaCama("Sofá Cama Moderno", "Tela", 500.0, 3, "Queen")
-        
+
         # Verificar atributos de Sofa
         assert sofa_cama.capacidad_personas == 3
-        
+
         # Verificar atributos de Cama
         assert sofa_cama.tamaño_colchon == "Queen"
-        
+
         # Verificar método específico
         assert hasattr(sofa_cama, 'transformar')
-    
+
     def test_resolucion_metodos(self):
         sofa_cama = SofaCama("Sofá Cama", "Cuero", 600.0, 2, "Full")
-        
+
         # Verificar que usa el método correcto (MRO)
         precio = sofa_cama.calcular_precio()
         assert precio > 600.0  # Debe incluir recargos de ambas clases
@@ -257,13 +393,13 @@ class TestComedor:
         mesa = Mesa("Mesa Comedor", "Roble", 200.0, "Rectangular", 6)
         sillas = [Silla("Silla Comedor", "Roble", 50.0, 4, "Roble") for _ in range(6)]
         return Comedor("Comedor Familiar", mesa, sillas)
-    
+
     def test_composicion_correcta(self, comedor_basico):
         assert comedor_basico.mesa is not None
         assert len(comedor_basico.sillas) == 6
         assert isinstance(comedor_basico.mesa, Mesa)
         assert all(isinstance(silla, Silla) for silla in comedor_basico.sillas)
-    
+
     def test_calcular_precio_total(self, comedor_basico):
         precio_total = comedor_basico.calcular_precio()
         precio_esperado = 200.0 + (6 * 50.0)  # Mesa + 6 sillas
@@ -284,29 +420,29 @@ class TestTienda:
     @pytest.fixture
     def tienda_vacia(self):
         return Tienda()
-    
+
     @pytest.fixture
     def silla_mock(self):
         mock_silla = Mock(spec=Silla)
         mock_silla.nombre = "Silla Mock"
         mock_silla.calcular_precio.return_value = 75.0
         return mock_silla
-    
+
     def test_agregar_producto(self, tienda_vacia, silla_mock):
         tienda_vacia.agregar_producto(silla_mock)
         assert len(tienda_vacia.inventario) == 1
         assert tienda_vacia.inventario[0] == silla_mock
-    
+
     def test_vender_producto_existente(self, tienda_vacia, silla_mock):
         tienda_vacia.agregar_producto(silla_mock)
-        
+
         with patch('builtins.print') as mock_print:
             resultado = tienda_vacia.vender_producto("Silla Mock")
-            
+
             assert resultado is True
             assert len(tienda_vacia.inventario) == 0
             mock_print.assert_called_once()
-    
+
     def test_vender_producto_inexistente(self, tienda_vacia):
         resultado = tienda_vacia.vender_producto("Producto Inexistente")
         assert resultado is False
@@ -400,10 +536,10 @@ def test_aplicar_descuento_por_material():
     # RED: Escribir prueba primero
     tienda = Tienda()
     silla = Silla("Silla", "Roble", 100.0, 4, "Roble")
-    
+
     tienda.agregar_producto(silla)
     tienda.aplicar_descuento_material("Roble", 0.1)  # 10% descuento
-    
+
     assert silla.precio_base == 90.0  # Esta prueba fallará inicialmente
 ```
 
@@ -529,4 +665,3 @@ El estudiante debe actualizar su repositorio personal con:
     ```
 
 **Nota**: repo [solución al proyecto Muebles](https://github.com/axlcraft/lpa1-taller-poo).
-
